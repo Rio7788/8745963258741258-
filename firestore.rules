@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email in ["REPLACE_WITH_ADMIN_EMAIL"];
+    }
+    match /menuItems/{itemId} {
+      // Public menu is readable by visitors; only the named authenticated admin can write.
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /settings/public {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // Deny everything else unless you deliberately add rules for another collection.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
