@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin | THARU Juice Bar</title>
+<link rel="icon" type="image/png" href="images/logo001.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700;800&family=Noto+Sans+Sinhala:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>document.documentElement.dataset.theme=localStorage.getItem('tharu_theme')||'light'</script>
+</head><body>
+<main class="narrow">
+ <section id="login" class="glass pad">
+  <h1>Admin login</h1>
+  <form id="lf"><input id="em" type="email" placeholder="Email" required autocomplete="username"><input id="pw" type="password" placeholder="Password" required autocomplete="current-password"><button class="btn alt">Sign in</button><p id="err" class="err"></p></form>
+ </section>
+ <div id="dash" hidden style="display:grid;gap:22px">
+  <section class="glass pad">
+   <h2>Shop status</h2>
+   <label class="sw"><input type="checkbox" id="open"><span id="ost"></span></label>
+   <label>Announcement (English)<input id="annEn"></label>
+   <label>Announcement (සිංහල)<input id="annSi"></label>
+   <button class="btn pri" id="saveShop">Save announcement</button>
+  </section>
+  <section class="glass pad">
+   <h2 id="ft">Add item</h2>
+   <form id="itf">
+    <input type="hidden" name="iid">
+    <input name="nameEn" placeholder="Name (English)" required>
+    <input name="nameSi" placeholder="නම (සිංහල)">
+    <input name="descEn" placeholder="Description (English)">
+    <input name="descSi" placeholder="විස්තරය (සිංහල)">
+    <input name="price" type="number" min="0" step="1" placeholder="Price (LKR)" required inputmode="numeric">
+    <select name="category"><option value="juice">Juices</option><option value="smoothie">Smoothies</option><option value="snacks">Snacks</option><option value="bakery">Bakery (cookies, biscuits)</option></select>
+    <input name="image" placeholder="Image path or URL, e.g. images/mango.jpg">
+    <label class="chk"><input type="checkbox" name="inStock" checked> In stock</label>
+    <button class="btn pri">Save item</button>
+    <button type="button" class="btn" id="cancel" hidden>Cancel edit</button>
+   </form>
+  </section>
+  <section class="glass pad"><h2>Menu items</h2><div id="list"></div></section>
+  <button class="btn alt" id="out">Sign out</button>
+ </div>
+</main>
+<script type="module">
+import {init,app,db,toast,esc} from './js/common.js';
+import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {collection,doc,setDoc,addDoc,updateDoc,deleteDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+init('admin');
+const auth=getAuth(app),$=id=>document.getElementById(id),f=$('itf');let items=[],unsub=[];
+onAuthStateChanged(auth,u=>{
+ $('login').hidden=!!u;$('dash').hidden=!u;unsub.forEach(x=>x());unsub=[];if(u)start();
+});
+$('lf').onsubmit=async e=>{e.preventDefault();$('err').textContent='';
+ try{await signInWithEmailAndPassword(auth,$('em').value,$('pw').value)}catch{$('err').textContent='Wrong email or password.'}};
+$('out').onclick=()=>signOut(auth);
+const label=()=>$('ost').textContent=$('open').checked?'Shop is OPEN':'Shop is CLOSED';
+function start(){
+ unsub.push(onSnapshot(doc(db,'settings','shop'),s=>{const d=s.data()||{};
+  $('open').checked=d.open!==false;$('annEn').value=d.announcementEn||'';$('annSi').value=d.announcementSi||'';label()}));
+ unsub.push(onSnapshot(collection(db,'menu'),s=>{
+  items=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.nameEn||'').localeCompare(b.nameEn||''));draw()}));
+}
+$('open').onchange=async()=>{label();try{await setDoc(doc(db,'settings','shop'),{open:$('open').checked},{merge:true});toast('Saved')}catch(e){toast('Error: '+e.code)}};
+$('saveShop').onclick=async()=>{try{await setDoc(doc(db,'settings','shop'),{announcementEn:$('annEn').value.trim(),announcementSi:$('annSi').value.trim()},{merge:true});toast('Saved')}catch(e){toast('Error: '+e.code)}};
+function reset(){f.reset();f.iid.value='';f.inStock.checked=true;$('ft').textContent='Add item';$('cancel').hidden=true}
+$('cancel').onclick=reset;
+f.onsubmit=async e=>{e.preventDefault();
+ const d={nameEn:f.nameEn.value.trim(),nameSi:f.nameSi.value.trim(),descEn:f.descEn.value.trim(),descSi:f.descSi.value.trim(),price:Number(f.price.value),category:f.category.value,image:f.image.value.trim(),inStock:f.inStock.checked};
+ try{f.iid.value?await updateDoc(doc(db,'menu',f.iid.value),d):await addDoc(collection(db,'menu'),{...d,createdAt:serverTimestamp()});toast('Saved');reset()}
+ catch(err){toast('Could not save: '+err.code)}};
+function draw(){
+ $('list').innerHTML=items.length?items.map(i=>`<div class="arow"><div class="ph th">${i.image?`<img src="${esc(i.image)}" alt="" onerror="this.remove()">`:''}</div>
+  <div><b>${esc(i.nameEn)}</b> / ${esc(i.nameSi||'')}<br><small>${esc(i.category)} - LKR ${i.price} - ${i.inStock===false?'Out of stock':'In stock'}</small></div>
+  <div class="row act"><button class="btn sm alt" data-e="${i.id}">Edit</button><button class="btn sm" data-s="${i.id}">${i.inStock===false?'Mark in stock':'Mark out of stock'}</button><button class="btn sm pri" data-d="${i.id}">Delete</button></div></div>`).join(''):'<p class="empty">No items yet. Add your first one above.</p>';
+}
+$('list').addEventListener('click',async e=>{
+ const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+ try{
+  if(d.e){const i=items.find(x=>x.id===d.e);['nameEn','nameSi','descEn','descSi','price','category','image'].forEach(k=>f[k].value=i[k]??'');
+   f.inStock.checked=i.inStock!==false;f.iid.value=i.id;$('ft').textContent='Edit item';$('cancel').hidden=false;f.scrollIntoView({behavior:'smooth'})}
+  if(d.s){const i=items.find(x=>x.id===d.s);await updateDoc(doc(db,'menu',d.s),{inStock:i.inStock===false})}
+  if(d.d&&confirm('Delete this item?'))await deleteDoc(doc(db,'menu',d.d));
+ }catch(err){toast('Error: '+err.code)}
+});
+</script></body></html>

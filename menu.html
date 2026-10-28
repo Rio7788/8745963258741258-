@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Menu | THARU Juice Bar</title>
+<link rel="icon" type="image/png" href="images/logo001.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700;800&family=Noto+Sans+Sinhala:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>document.documentElement.dataset.theme=localStorage.getItem('tharu_theme')||'light'</script>
+</head><body>
+<main>
+ <h1 data-i18n="menu"></h1>
+ <div class="chips" id="chips"></div>
+ <div class="grid" id="grid"><p class="empty" data-i18n="loading"></p></div>
+</main>
+<script type="module">
+import {init,t,nm,esc,db,cart,toast,ic} from './js/common.js';
+import {collection,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+init('menu');
+const cats=['all','juice','smoothie','snacks','bakery'];let cur='all',items=[];
+const chips=document.getElementById('chips'),grid=document.getElementById('grid');
+function draw(){
+ chips.innerHTML=cats.map(c=>`<button class="chip ${c===cur?'on':''}" data-c="${c}">${t(c)}</button>`).join('');
+ const list=items.filter(i=>cur==='all'||i.category===cur);
+ grid.innerHTML=list.length?list.map(i=>`<article class="card glass ${i.inStock===false?'oos':''}">
+  <div class="ph">${i.image?`<img src="${esc(i.image)}" alt="${esc(nm(i,'name'))}" loading="lazy" onerror="this.remove()">`:''}${i.inStock===false?`<span class="badge">${t('out')}</span>`:''}</div>
+  <div class="body"><h3>${esc(nm(i,'name'))}</h3><p>${esc(nm(i,'desc'))}</p>
+  <div class="foot"><strong>LKR ${Number(i.price).toLocaleString('en-US')}</strong>
+  <button class="btn pri sm" data-add="${i.id}" ${i.inStock===false?'disabled':''}>${ic('cart',18)}${t('add')}</button></div></div></article>`).join(''):`<p class="empty">${t('noItems')}</p>`;
+}
+document.addEventListener('click',e=>{
+ const c=e.target.closest('[data-c]');if(c){cur=c.dataset.c;draw();return}
+ const a=e.target.closest('[data-add]');if(!a)return;
+ const it=items.find(x=>x.id===a.dataset.add);if(!it)return;
+ const c2=cart.get(),ex=c2.find(x=>x.id===it.id);
+ if(ex){ex.qty++;ex.price=it.price}else c2.push({id:it.id,nameEn:it.nameEn,nameSi:it.nameSi||it.nameEn,price:Number(it.price),qty:1});
+ cart.set(c2);toast(t('added'));
+});
+addEventListener('langchange',draw);
+onSnapshot(collection(db,'menu'),s=>{
+ items=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.nameEn||'').localeCompare(b.nameEn||''));draw();
+},e=>{grid.innerHTML=`<p class="empty">${esc(e.message)}</p>`});
+draw();
+</script></body></html>

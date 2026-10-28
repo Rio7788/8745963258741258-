@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THARU Juice Bar | Fresh Juices, Cookies & Sandwiches</title>
+<meta name="description" content="Fresh juices, smoothies, cookies, biscuits and sandwiches at THARU Juice Bar. Order on WhatsApp.">
+<link rel="icon" type="image/png" href="images/logo001.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700;800&family=Noto+Sans+Sinhala:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>document.documentElement.dataset.theme=localStorage.getItem('tharu_theme')||'light'</script>
+</head><body>
+<main>
+ <section class="hero glass">
+  <img class="logo-big" src="images/logo001.png" alt="THARU Juice Bar">
+  <span class="eyebrow" data-i18n="eyebrow"></span>
+  <h1 data-i18n="heroTitle"></h1>
+  <p data-i18n="heroSub"></p>
+  <div class="row"><a class="btn pri" href="menu.html" data-i18n="orderNow"></a><a class="btn alt" href="#gallery" data-i18n="gallery"></a></div>
+ </section>
+
+ <section id="gallery" class="sec">
+  <h2 data-i18n="gallery"></h2>
+  <!-- Add your own photos: images/shop1.jpg, shop2.jpg, shop3.jpg -->
+  <div class="shots">
+   <div class="shot ph"><img src="images/shop1.jpg" alt="Fresh fruit juices at THARU Juice Bar" loading="lazy" onerror="this.remove()"></div>
+   <div class="shot ph"><img src="images/shop2.jpg" alt="Cookies and biscuits" loading="lazy" onerror="this.remove()"></div>
+   <div class="shot ph"><img src="images/shop3.jpg" alt="Sandwiches and smoothies" loading="lazy" onerror="this.remove()"></div>
+  </div>
+ </section>
+
+ <section class="glass pad center">
+  <h2 data-i18n="reviews"></h2>
+  <p data-i18n="reviewsSub" style="color:var(--muted)"></p>
+  <a class="btn pri" href="https://maps.app.goo.gl/sts6Jc5GBXbinUr2A" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.200 9.500l6.100-.9z"/></svg><span data-i18n="reviewBtn"></span></a>
+ </section>
+
+ <section class="sec">
+  <h2 data-i18n="about"></h2>
+  <p data-i18n="aboutText" style="max-width:62ch"></p>
+  <div class="perks" id="perks"></div>
+ </section>
+
+ <section class="glass pad center">
+  <h2 data-i18n="contact"></h2>
+  <div class="row">
+   <a class="btn alt" id="wa" target="_blank" rel="noopener"></a>
+   <a class="btn" href="tel:+94789280918" id="tel"></a>
+  </div>
+  <p style="color:var(--muted)">+94 78 928 0918</p>
+ </section>
+</main>
+<footer>© <span id="yr"></span> THARU Juice Bar</footer>
+<script type="module">
+import {init,ic,WHATSAPP,applyI18n} from './js/common.js';
+init('home');
+document.getElementById('yr').textContent=new Date().getFullYear();
+document.getElementById('perks').innerHTML=[['leaf','p1'],['drop','p2'],['clock','p3']].map(([i,k])=>`<div class="perk glass"><div class="pi">${ic(i,28)}</div><h3 data-i18n="${k}"></h3><p data-i18n="${k}d"></p></div>`).join('');
+const wa=document.getElementById('wa');wa.href='https://wa.me/'+WHATSAPP;wa.innerHTML=ic('chat',20)+'<span data-i18n="chat"></span>';
+document.getElementById('tel').innerHTML=ic('phone',20)+'<span data-i18n="call"></span>';
+applyI18n();
+</script></body></html>

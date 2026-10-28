@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cart | THARU Juice Bar</title>
+<link rel="icon" type="image/png" href="images/logo001.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700;800&family=Noto+Sans+Sinhala:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>document.documentElement.dataset.theme=localStorage.getItem('tharu_theme')||'light'</script>
+</head><body>
+<main>
+ <h1 data-i18n="yourCart"></h1>
+ <div class="two">
+  <section class="glass pad"><div id="list"></div><div class="total" id="tot"></div></section>
+  <section class="glass pad">
+   <h2 data-i18n="details"></h2>
+   <form id="f">
+    <input name="name" data-i18n-ph="name" required autocomplete="name">
+    <input name="phone" type="tel" data-i18n-ph="phone" required autocomplete="tel">
+    <input name="address" data-i18n-ph="address" autocomplete="street-address">
+    <textarea name="notes" data-i18n-ph="notes"></textarea>
+    <button class="btn alt" type="submit" id="go"></button>
+   </form>
+  </section>
+ </div>
+</main>
+<script type="module">
+import {init,t,nm,esc,cart,toast,shop,ic,WHATSAPP} from './js/common.js';
+init('cart');
+const list=document.getElementById('list'),tot=document.getElementById('tot'),fmt=n=>n.toLocaleString('en-US');
+function draw(){
+ const c=cart.get();
+ list.innerHTML=c.length?c.map((i,k)=>`<div class="line"><div><b>${esc(nm(i,'name'))}</b><br><small>LKR ${fmt(i.price)}</small></div>
+  <div class="qty"><button data-m="${k}" aria-label="-">−</button>${i.qty}<button data-p="${k}" aria-label="+">+</button></div>
+  <button class="btn sm" data-r="${k}">${t('remove')}</button></div>`).join(''):`<p class="empty">${t('empty')}</p>`;
+ tot.innerHTML=c.length?`<span>${t('total')}</span><span>LKR ${fmt(c.reduce((s,i)=>s+i.price*i.qty,0))}</span>`:'';
+ document.getElementById('go').innerHTML=ic('chat',20)+t('send');
+}
+list.addEventListener('click',e=>{
+ const c=cart.get(),b=e.target.closest('button');if(!b)return;
+ const d=b.dataset;
+ if(d.p!==undefined)c[d.p].qty++;
+ if(d.m!==undefined&&--c[d.m].qty<1)c.splice(d.m,1);
+ if(d.r!==undefined)c.splice(d.r,1);
+ cart.set(c);draw();
+});
+document.getElementById('f').onsubmit=e=>{
+ e.preventDefault();const c=cart.get();
+ if(!c.length)return toast(t('empty'));
+ if(shop.open===false)return toast(t('closedMsg'));
+ const f=new FormData(e.target),total=c.reduce((s,i)=>s+i.price*i.qty,0),line='----------------------------------';
+ const msg=['🛒 *NEW ORDER - THARU Juice Bar*',line,
+  `👤 *Name:* ${f.get('name')}`,`📞 *Phone:* ${f.get('phone')}`,`📍 *Address:* ${f.get('address')||'-'}`,`📝 *Notes:* ${f.get('notes')||'-'}`,line,
+  '🥤 *Items Ordered:*',...c.map(i=>`• ${i.qty}x ${i.nameEn} (LKR ${fmt(i.price*i.qty)})`),line,
+  `💰 *Total Amount:* *LKR ${fmt(total)}*`,'🌟 *Thank you for ordering!*'].join('\n');
+ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`,'_blank');
+};
+addEventListener('langchange',draw);draw();
+</script></body></html>
